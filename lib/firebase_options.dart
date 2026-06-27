@@ -62,7 +62,6 @@ class DefaultFirebaseOptions {
     projectId: 'moviesandgamesdddg',
     storageBucket: 'moviesandgamesdddg.firebasestorage.app',
   );
-
   static const FirebaseOptions ios = FirebaseOptions(
     apiKey: 'AIzaSyDLSXmfq5UEJ2o-5bbLHKieNaBetUkgGxo',
     appId: '1:485284708798:ios:6d156170b07bbcf71179ef',
