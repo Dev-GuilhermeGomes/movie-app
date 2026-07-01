@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/auth_provider.dart';
 import 'login_screen.dart';
+import 'manage_account_screen.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -23,8 +24,8 @@ class SettingsScreen extends ConsumerWidget {
             icon: Icons.person_outline,
             title: 'Gerir conta',
             subtitle: 'Alterar email ou password',
-            onTap: () => _showDialog(context, 'Gerir conta',
-              'Esta funcionalidade estará disponível em breve.'),
+            onTap: () => Navigator.push(context,
+  MaterialPageRoute(builder: (_) => const ManageAccountScreen())),
           ),
           const Divider(color: Color(0xFF2A2A35)),
           const _SectionTitle('Notificações'),
