@@ -5,7 +5,7 @@ import '../../data/repositories/movie_repository_impl.dart';
 import '../../domain/entities/movie.dart';
 import 'package:dio/dio.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-
+import 'package:firebase_auth/firebase_auth.dart';
 
 // Provider do Dio
 final dioProvider = Provider<Dio>((ref) {
@@ -27,26 +27,50 @@ final movieRepositoryProvider = Provider((ref) {
 class MovieNotifier extends AsyncNotifier<List<Movie>> {
   @override
   Future<List<Movie>> build() async {
-    return await ref.read(movieRepositoryProvider).getPopularMovies();
+    return await _loadMoviesWithFavorites(
+      await ref.read(movieRepositoryProvider).getPopularMovies(),
+    );
+  }
+
+  // Marca os filmes que já estão nos favoritos do utilizador
+  Future<List<Movie>> _loadMoviesWithFavorites(List<Movie> movies) async {
+    final userId = FirebaseAuth.instance.currentUser?.uid;
+    if (userId == null) return movies;
+
+    final favoriteIds = await ref.read(movieRepositoryProvider).getFavoriteIds(userId);
+
+    for (final movie in movies) {
+      movie.isFavorite = favoriteIds.contains(movie.id.toString());
+    }
+    return movies;
   }
 
   // Pesquisar filmes
   Future<void> search(String query) async {
     state = const AsyncLoading();
-    if (query.isEmpty) {
-      state = AsyncData(
-        await ref.read(movieRepositoryProvider).getPopularMovies(),
-      );
-    } else {
-      state = AsyncData(
-        await ref.read(movieRepositoryProvider).searchMovies(query),
-      );
-    }
+    final repo = ref.read(movieRepositoryProvider);
+    final movies = query.isEmpty
+        ? await repo.getPopularMovies()
+        : await repo.searchMovies(query);
+
+    state = AsyncData(await _loadMoviesWithFavorites(movies));
   }
 
   // Favoritar/desfavoritar
-  Future<void> toggleFavorite(String userId, Movie movie) async {
-    await ref.read(movieRepositoryProvider).toggleFavorite(userId, movie);
+  Future<void> toggleFavorite(Movie movie) async {
+    final userId = FirebaseAuth.instance.currentUser?.uid;
+    if (userId == null) return;
+
+    try {
+      // Atualiza no Firestore
+      await ref.read(movieRepositoryProvider).toggleFavorite(userId, movie);
+      // Atualiza o estado local para refletir na UI imediatamente
+      movie.isFavorite = !movie.isFavorite;
+      final currentMovies = state.value ?? [];
+      state = AsyncData([...currentMovies]);
+    } catch (e) {
+      // Se falhar, o estado local não muda — fica sincronizado com o Firestore
+    }
   }
 }
 
