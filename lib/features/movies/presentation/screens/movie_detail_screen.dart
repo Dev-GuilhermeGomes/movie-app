@@ -9,6 +9,15 @@ class MovieDetailScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final moviesAsync = ref.watch(movieProvider);
+    final currentMovie = moviesAsync.maybeWhen(
+      data: (movies) {
+        final found = movies.where((m) => m.id == movie.id);
+        return found.isNotEmpty ? found.first : movie;
+      },
+      orElse: () => movie,
+    );
+
     return Scaffold(
       backgroundColor: const Color(0xFF0F0F13),
       body: CustomScrollView(
@@ -19,18 +28,14 @@ class MovieDetailScreen extends ConsumerWidget {
             pinned: true,
             iconTheme: const IconThemeData(color: Color(0xFFE8C547)),
             flexibleSpace: FlexibleSpaceBar(
-              background: movie.posterPath.isNotEmpty
+              background: currentMovie.posterPath.isNotEmpty
                   ? Image.network(
-                      'https://image.tmdb.org/t/p/w500${movie.posterPath}',
+                      'https://image.tmdb.org/t/p/w500${currentMovie.posterPath}',
                       fit: BoxFit.cover,
                     )
                   : Container(
                       color: const Color(0xFF1A1A22),
-                      child: const Icon(
-                        Icons.movie,
-                        color: Colors.grey,
-                        size: 80,
-                      ),
+                      child: const Icon(Icons.movie, color: Colors.grey, size: 80),
                     ),
             ),
           ),
@@ -41,7 +46,7 @@ class MovieDetailScreen extends ConsumerWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    movie.title,
+                    currentMovie.title,
                     style: const TextStyle(
                       color: Colors.white,
                       fontSize: 24,
@@ -51,14 +56,10 @@ class MovieDetailScreen extends ConsumerWidget {
                   const SizedBox(height: 8),
                   Row(
                     children: [
-                      const Icon(
-                        Icons.star,
-                        color: Color(0xFFE8C547),
-                        size: 20,
-                      ),
+                      const Icon(Icons.star, color: Color(0xFFE8C547), size: 20),
                       const SizedBox(width: 6),
                       Text(
-                        '${movie.voteAverage.toStringAsFixed(1)}/10',
+                        '${currentMovie.voteAverage.toStringAsFixed(1)}/10',
                         style: const TextStyle(
                           color: Color(0xFFE8C547),
                           fontSize: 16,
@@ -67,11 +68,8 @@ class MovieDetailScreen extends ConsumerWidget {
                       ),
                       const SizedBox(width: 16),
                       Text(
-                        movie.releaseDate,
-                        style: const TextStyle(
-                          color: Colors.grey,
-                          fontSize: 14,
-                        ),
+                        currentMovie.releaseDate,
+                        style: const TextStyle(color: Colors.grey, fontSize: 14),
                       ),
                     ],
                   ),
@@ -86,8 +84,8 @@ class MovieDetailScreen extends ConsumerWidget {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    movie.overview.isNotEmpty
-                        ? movie.overview
+                    currentMovie.overview.isNotEmpty
+                        ? currentMovie.overview
                         : 'Sem sinopse disponível.',
                     style: const TextStyle(
                       color: Colors.white,
@@ -100,18 +98,14 @@ class MovieDetailScreen extends ConsumerWidget {
                     width: double.infinity,
                     child: ElevatedButton.icon(
                       onPressed: () {
-                        ref.read(movieProvider.notifier).toggleFavorite(movie);
-                        //Força o Flutter a redesenhar o ecrã, ou seja, atualiza o estado do widget para refletir a mudança de favorito
-                        (context as Element).markNeedsBuild();
+                        ref.read(movieProvider.notifier).toggleFavorite(currentMovie);
                       },
                       icon: Icon(
-                        movie.isFavorite
-                            ? Icons.favorite
-                            : Icons.favorite_border,
+                        currentMovie.isFavorite ? Icons.favorite : Icons.favorite_border,
                         color: Colors.black,
                       ),
                       label: Text(
-                        movie.isFavorite
+                        currentMovie.isFavorite
                             ? 'Remover dos Favoritos'
                             : 'Adicionar aos Favoritos',
                       ),
